@@ -78,7 +78,7 @@ class txCreator():
         print("Complete")
 
     def check_directory(self, directory: str) -> bool:
-        return os. path. isdir(directory)
+        return os.path.isdir(directory)
 
     def copy_for_version(self):
 
