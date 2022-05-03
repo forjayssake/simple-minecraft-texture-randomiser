@@ -42,21 +42,28 @@ class txCreator():
 
 
     def run(self):
-        
         self.fetch_paths(self.mc_path)
-
         if self.mode == "setup" or self.mode == "random":
-            self.tidy_up()
-            self.copy_for_version()
-        
+            self.setup()
         if self.mode == "random":
-            self.fetch_assets_as_dictionary()
-            self.reorder_assets()
-   
+            self.randomise()
         if self.mode == "random" or self.mode == "complete":
-            self.create_tx()
-            self.tidy_up()
+            self.complete()
+ 
 
+    def setup(self):
+        self.tidy_up()
+        self.copy_for_version()
+
+
+    def randomise(self):
+        self.fetch_assets_as_dictionary()
+        self.reorder_assets()
+
+
+    def complete(self):
+        self.create_texture_pack()
+        self.tidy_up()
         print("Complete")
 
 
@@ -135,12 +142,17 @@ class txCreator():
             self.texture_files.remove(flist[1])
 
 
-    def create_tx(self):
+    def create_texture_pack(self):
         print("Creating: " + self.extract_dir + "\\pack.mcmeta")
         f = open(self.extract_dir + "\\pack.mcmeta","w+")
         content = self.pack_json.replace('[format]', str(self.pack_format))
 
-        description = 'Randomised_pack_' + str(time.time())
+        if self.mode == "random":
+            description = 'Randomised_pack_' + str(time.time())
+        elif self.mode == "complete":
+            userinp = input("Enter a sensible texture pack name: ")
+            description = userinp.replace(" ", "_") + "_" + str(time.time())
+
         content = content.replace('[description]', description)
 
         f.write(content)
