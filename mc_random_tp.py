@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 
 class txCreator():
 
+    mode: str  = "random"
     mc_path: str = ""
     tmp_dir: str = ""
     mc_dot_dir: str = ""
@@ -21,14 +22,43 @@ class txCreator():
     pack_json: str = '{"pack": {"pack_format": [format],"description": "[description]"}}'
 
 
-    def __init__(self, mc_path: str, mc_format: int):
+    def __init__(self, mc_path: str, mc_format: int, mc_mode: str):
+        
+        if not self.check_directory(mc_path):
+            print("Error: " + mc_path + " is not found or is not a directory")
+            sys.exit(2)
         self.mc_path = mc_path
+        print("Validated Minecraft version directory: " + self.mc_path)
+
+        if mc_mode != None:
+            self.mode = mc_mode
+        print("Mode: " + self.mode)
 
         if mc_format != None:
             self.pack_format = mc_format
+        print("Using pack format: " + str(self.pack_format))
 
-        self.tidy_up()
         self.run()
+
+
+    def run(self):
+        
+        self.fetch_paths(self.mc_path)
+
+        if self.mode == "setup" or self.mode == "random":
+            self.tidy_up()
+            self.copy_for_version()
+        
+        if self.mode == "random":
+            self.fetch_assets_as_dictionary()
+            self.reorder_assets()
+   
+        if self.mode == "random" or self.mode == "complete":
+            self.create_tx()
+            self.tidy_up()
+
+        print("Complete")
+
 
     def fetch_paths(self, mc_path: str):
         print("Deriving required paths")
@@ -60,25 +90,9 @@ class txCreator():
         self.extract_dir = self.tmp_dir + "\\" + self.mc_version
         
 
-    def run(self):
-        if not self.check_directory(self.mc_path):
-            print("Error: " + self.mc_path + " is not found or is not a directory")
-            sys.exit(2)
-        
-        print("Validated Minecraft directory")
-        print("Using pack format: " + str(self.pack_format))
-        
-        self.fetch_paths(self.mc_path)
-        self.copy_for_version()
-        self.fetch_assets_as_dictionary()
-        self.reorder_assets()
-        self.create_tx()
-        self.tidy_up()
-
-        print("Complete")
-
     def check_directory(self, directory: str) -> bool:
         return os.path.isdir(directory)
+
 
     def copy_for_version(self):
 
@@ -96,10 +110,14 @@ class txCreator():
         print("Extracting " + self.mc_version + ".jar")
         with zipfile.ZipFile(self.tmp_dir + "\\" + self.mc_version + ".jar", 'r') as zip_ref:
             zip_ref.extractall(self.extract_dir)
+
+        if self.mode == "setup":
+            print("Extraction complete. Edit image files in: " + self.extract_dir + "\\assets\\minecraft\\textures as required, and run this command in `complete` mode.")
         
 
     def fetch_assets_as_dictionary(self):
         self.texture_files = os.listdir(self.extract_dir + self.blocks_suffix)
+
 
     def reorder_assets(self):
         blocks_path = self.extract_dir + self.blocks_suffix
@@ -115,6 +133,7 @@ class txCreator():
             # remove samples from texture_files
             self.texture_files.remove(flist[0])
             self.texture_files.remove(flist[1])
+
 
     def create_tx(self):
         print("Creating: " + self.extract_dir + "\\pack.mcmeta")
@@ -138,8 +157,9 @@ class txCreator():
         print("Copying " + self.extract_dir + "\\" + description + ".zip to resourcepacks")
         shutil.copy(self.extract_dir + "\\" + description + ".zip", self.mc_dot_dir + "\\resourcepacks\\" + description + ".zip")
 
+
     def tidy_up(self):
-        print("Deleting temporary directory if present")
+        print("Deleting temporary directory if present: " + self.tmp_dir)
         if self.check_directory(self.tmp_dir):
             shutil.rmtree(self.tmp_dir)
 
@@ -152,6 +172,9 @@ if __name__ == "__main__":
     helptxt = "Optional. Pack format for required minecraft version. See readme.md for more information. Defaults to 8 for 1.18x"
     parser.add_argument("-f", "--format", dest="mc_format", help=helptxt, metavar="INT")
 
+    helptxt = "Optional. [random, setup, complete]. Create random (default), setup custom, complete custom"
+    parser.add_argument("-m", "--mode", dest="mc_mode", help=helptxt, metavar="STRING")
+
     args = parser.parse_args()
     if args.mc_dir == None:
         print("Missing required argument completely: ")
@@ -160,5 +183,5 @@ if __name__ == "__main__":
 
     print("attemping to process for: " + args.mc_dir)
 
-    tx_creator = txCreator(args.mc_dir, args.mc_format)
+    tx_creator = txCreator(args.mc_dir, args.mc_format, args.mc_mode)
     
