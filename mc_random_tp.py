@@ -133,9 +133,8 @@ class txCreator():
             # rename files in place
             os.rename(blocks_path + "\\" + flist[1], blocks_path + "\\1" + flist[1])
 
-            print("Randomising: " + flist[0])
+            print("Swapping: " + flist[0] + " with " + flist[1])
             os.rename(blocks_path + "\\" + flist[0], blocks_path + "\\" + flist[1])
-            print("Randomising: " + flist[1])
             os.rename(blocks_path + "\\1" + flist[1], blocks_path + "\\" + flist[0])
             # remove samples from texture_files
             self.texture_files.remove(flist[0])
